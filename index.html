@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#07172b">
+<title>India Air Quality Assistant</title>
+<style>
+:root{--navy:#07172b;--panel:#10243c;--panel2:#142d49;--red:#ff4b55;--white:#f4f8fc;--muted:#b8c7d9;--line:#29415c;--green:#47d7a1}
+*{box-sizing:border-box}
+body{margin:0;background:linear-gradient(160deg,#07172b,#0b2037 60%,#081426);color:var(--white);font:16px/1.55 system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif}
+header{padding:24px 16px 18px;text-align:center;border-bottom:1px solid var(--line)}
+.brand{display:inline-flex;align-items:center;gap:10px;margin-bottom:8px}
+.mark{width:42px;height:42px;display:grid;place-items:center;background:#fff;color:#d92637;font-weight:900;font-size:20px;clip-path:polygon(0 0,100% 0,100% 70%,50% 100%,0 70%)}
+h1{font-size:clamp(26px,6vw,40px);line-height:1.1;margin:8px 0;color:#fff}
+header p{margin:8px auto;color:var(--muted);max-width:650px}
+main{max-width:1000px;margin:auto;padding:18px 14px 42px}
+section,.card{background:rgba(16,36,60,.94);border:1px solid var(--line);border-radius:18px;padding:18px;margin:14px 0;box-shadow:0 8px 24px #0002}
+h2{font-size:22px;margin:0 0 12px}h3{font-size:18px;margin:0 0 8px}
+p{margin:8px 0}.muted{color:var(--muted)}.small{font-size:13px;color:var(--muted)}
+.search{display:flex;gap:8px;flex-wrap:wrap}
+input,button,select{font:inherit;border-radius:12px;border:1px solid var(--line);padding:12px;background:#081a2d;color:white}
+input{flex:1;min-width:180px}button{background:var(--red);border-color:var(--red);font-weight:700;cursor:pointer}button.secondary{background:var(--panel2);border-color:var(--line)}
+.hero{display:grid;grid-template-columns:1fr auto;gap:14px;align-items:center}
+.aqi{font-size:clamp(48px,12vw,76px);font-weight:850;line-height:1;color:#fff}
+.pill{display:inline-block;padding:5px 11px;border-radius:999px;background:#263b55;color:#fff;font-size:13px;font-weight:700}
+.good{background:#1d7a58}.fair{background:#447b38}.moderate{background:#b28a23}.poor{background:#c15d24}.verypoor{background:#b7353e}.extreme{background:#762d78}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(145px,1fr));gap:10px}
+.metric{background:#0a1c30;border:1px solid var(--line);border-radius:14px;padding:13px}
+.metric strong{display:block;font-size:24px}.metric span{font-size:13px;color:var(--muted)}
+.callout{border-left:4px solid var(--red);padding:10px 13px;background:#0a1c30;border-radius:8px;margin:10px 0}
+ul{padding-left:22px}li{margin:7px 0}
+.two{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:12px}
+details{background:#0a1c30;border:1px solid var(--line);border-radius:12px;padding:12px;margin:9px 0}
+summary{font-weight:700;cursor:pointer}
+footer{text-align:center;padding:22px;color:var(--muted);border-top:1px solid var(--line)}
+a{color:#8bd7ff} .status{min-height:24px;color:var(--muted)}
+canvas{width:100%;max-height:230px}
+@media(max-width:520px){section,.card{padding:14px}.hero{grid-template-columns:1fr}.aqi{font-size:58px}}
+</style>
+</head>
+<body>
+<header>
+  <div class="brand"><div class="mark" aria-hidden="true">AQ</div><strong>INDIA AIR QUALITY ASSISTANT</strong></div>
+  <h1>Breathe smarter.<br>Protect your community.</h1>
+  <p>Understand air pollution, check pollutant levels, learn what they mean, and take practical action.</p>
+</header>
+<main>
+<section>
+  <h2>Check a city</h2>
+  <div class="search">
+    <input id="city" value="Lucknow" aria-label="Enter an Indian city" placeholder="Enter an Indian city, e.g. Delhi">
+    <button id="searchBtn" onclick="searchCity()">Check air</button>
+  </div>
+  <p class="small">Data source: Open-Meteo Air Quality. The index shown here is the European AQI estimate, not an official CPCB Indian AQI station reading.</p>
+  <p id="status" class="status" role="status">Loading city data…</p>
+</section>
+
+<section id="current">
+  <div class="hero">
+    <div><h2 id="place">Lucknow, India</h2><span id="category" class="pill">Loading</span><p id="advice" class="muted">Fetching the latest available hourly estimate…</p></div>
+    <div><div class="aqi" id="aqi">--</div><div class="small">European AQI (eAQI)</div></div>
+  </div>
+  <div class="grid" style="margin-top:18px">
+    <div class="metric"><strong id="pm25">--</strong><span>PM2.5 · µg/m³</span></div>
+    <div class="metric"><strong id="pm10">--</strong><span>PM10 · µg/m³</span></div>
+    <div class="metric"><strong id="no2">--</strong><span>NO₂ · µg/m³</span></div>
+    <div class="metric"><strong id="so2">--</strong><span>SO₂ · µg/m³</span></div>
+    <div class="metric"><strong id="o3">--</strong><span>O₃ · µg/m³</span></div>
+    <div class="metric"><strong id="co">--</strong><span>CO · µg/m³</span></div>
+  </div>
+  <p class="small" id="updated">Values are the nearest available hourly model data; they may not represent a nearby monitoring station.</p>
+</section>
+
+<section>
+  <h2>What does pollution do?</h2>
+  <div class="two">
+    <div class="metric"><h3>PM2.5</h3><p>Tiny particles that can travel deep into the lungs and may enter the bloodstream. They are especially concerning during long exposure.</p></div>
+    <div class="metric"><h3>PM10</h3><p>Dust and larger particles that can irritate the nose, throat and lungs. Sources include road dust and construction.</p></div>
+    <div class="metric"><h3>NO₂</h3><p>A gas commonly produced by traffic and fuel combustion. It can irritate airways and worsen respiratory symptoms.</p></div>
+    <div class="metric"><h3>SO₂</h3><p>A gas released mainly by burning sulfur-containing fuels and some industries. It can trigger breathing difficulty, especially in people with asthma.</p></div>
+    <div class="metric"><h3>Ground-level O₃</h3><p>Forms when sunlight reacts with other pollutants. It can cause coughing, chest discomfort and reduced lung function.</p></div>
+    <div class="metric"><h3>CO</h3><p>Carbon monoxide is an invisible, odourless gas from incomplete combustion. High exposure can prevent blood from carrying enough oxygen.</p></div>
+  </div>
+</section>
+
+<section>
+  <h2>What should I do when air quality is poor?</h2>
+  <ul>
+    <li>Reduce strenuous outdoor exercise; choose a cleaner indoor place when possible.</li>
+    <li>People with asthma, heart or lung conditions, children and older adults should take extra care and follow their clinician’s advice.</li>
+    <li>Keep windows closed during nearby pollution peaks if indoor air is cleaner; ventilate when outdoor air improves.</li>
+    <li>If you must be outdoors in particle pollution, a well-fitting N95/FFP2 respirator can reduce inhaled particles. It does not protect against gases such as SO₂ or CO.</li>
+    <li>Avoid burning rubbish, leaves or biomass; never run a generator or vehicle in an enclosed space.</li>
+  </ul>
+  <div class="callout"><strong>Safety:</strong> AQI guidance is general information, not a medical diagnosis. If you have severe breathing difficulty, chest pain, confusion or fainting, seek urgent medical help.</div>
+</section>
+
+<section>
+  <h2>Nature’s pollution clues</h2>
+  <div class="two">
+    <div><h3>Lichens</h3><p>Lichens are partnerships between a fungus and a photosynthetic partner. Some are sensitive to air pollution, especially sulfur dioxide, so their presence and diversity can help scientists study long-term local air quality.</p><p class="small">Lichens are biological indicators, not a precise real-time AQI meter. Species, climate, bark and moisture also affect where they grow.</p></div>
+    <div><h3>Other bioindicators</h3><p>Leaf injury, mosses and selected plants can provide clues about pollutant exposure. Scientists compare observations with controls and measured pollutant data before drawing conclusions.</p><p class="small">Do not identify pollution levels from one plant or one lichen alone.</p></div>
+  </div>
+</section>
+
+<section>
+  <h2>Cleaner choices: small actions, shared impact</h2>
+  <div class="two">
+    <div class="metric"><h3>Vehicle maintenance & PUC</h3><p>Maintain your vehicle, avoid unnecessary idling, and keep its Pollution Under Control (PUC) certificate valid as required by local rules. Check renewal and validity through official transport services.</p><p><a href="https://parivahan.gov.in/" target="_blank" rel="noopener">Official Parivahan portal ↗</a></p></div>
+    <div class="metric"><h3>Walk, cycle, share</h3><p>For short safe trips, consider walking or cycling. Use public transport or carpool where practical. Electric vehicles have no tailpipe emissions, though electricity generation and manufacturing also have impacts.</p></div>
+    <div class="metric"><h3>Plant wisely</h3><p>Support locally suitable native trees and shrubs, protect existing trees, and maintain green spaces. Plants help, but they cannot replace emission reductions.</p></div>
+    <div class="metric"><h3>Clean neighbourhood</h3><p>Do not burn waste. Report open burning and dusty construction where local civic channels allow. Keep streets clean and support community monitoring.</p></div>
+  </div>
+</section>
+
+<section>
+  <h2>Explore a pollution scenario</h2>
+  <p class="muted">Move the slider to see how the advice changes. This is a learning simulation, not a live measurement.</p>
+  <label for="sim">Example eAQI: <strong id="simValue">25</strong></label>
+  <input id="sim" type="range" min="0" max="150" value="25" style="width:100%" oninput="simulate(this.value)">
+  <div class="grid">
+    <div class="metric"><strong id="simLabel">Good</strong><span>Example category</span></div>
+    <div class="metric"><strong id="simAction">Enjoy normal activities</strong><span>Example guidance</span></div>
+  </div>
+</section>
+
+<section>
+  <h2>Learn more from trusted sources</h2>
+  <ul>
+    <li><a href="https://cpcb.nic.in/" target="_blank" rel="noopener">Central Pollution Control Board (CPCB)</a> — Indian air quality information and guidance.</li>
+    <li><a href="https://airquality.cpcb.gov.in/" target="_blank" rel="noopener">CPCB National AQI portal</a> — check official monitoring information when available.</li>
+    <li><a href="https://www.mohfw.gov.in/" target="_blank" rel="noopener">Ministry of Health and Family Welfare</a> — public health information.</li>
+    <li><a href="https://moef.gov.in/" target="_blank" rel="noopener">Ministry of Environment, Forest and Climate Change</a> — environmental programmes and policy updates.</li>
+    <li><a href="https://open-meteo.com/en/docs/air-quality-api" target="_blank" rel="noopener">Open-Meteo Air Quality API</a> — source documentation for this prototype’s model data.</li>
+  </ul>
+  <p class="small">Government plans and local rules can change. Use official government pages for current notices, schemes and requirements.</p>
+</section>
+</main>
+<footer>
+  <strong>Learn • Practice • Improve</strong>
+  <p class="small">Educational air-quality prototype · Built for learning and community awareness</p>
+</footer>
+
+<script>
+const $ = id => document.getElementById(id);
+function setStatus(message){$("status").textContent=message}
+function categoryFor(aqi){
+  if(aqi<=20)return ["Good","good","Air quality is generally good. Enjoy normal activities."];
+  if(aqi<=40)return ["Fair","fair","Most people can continue normal activities. Sensitive people should notice symptoms."];
+  if(aqi<=60)return ["Moderate","moderate","Consider reducing prolonged or heavy outdoor exertion if you are sensitive."];
+  if(aqi<=80)return ["Poor","poor","Reduce long or strenuous outdoor activity, especially if you are sensitive."];
+  if(aqi<=100)return ["Very Poor","verypoor","Avoid strenuous outdoor activity; sensitive groups should stay in cleaner indoor air."];
+  return ["Extremely Poor","extreme","Avoid outdoor exertion and follow local health advisories."];
+}
+function adviceFor(aqi){
+  const c=categoryFor(aqi);
+  return c[2];
+}
+async function searchCity(){
+  const city=$("city").value.trim();
+  if(!city){setStatus("Please enter a city name.");return}
+  $("searchBtn").disabled=true;setStatus("Finding city and fetching air-quality data…");
+  try{
+    const geoUrl="https://geocoding-api.open-meteo.com/v1/search?name="+encodeURIComponent(city)+"&count=10&language=en&format=json";
+    const geo=await fetch(geoUrl).then(r=>{if(!r.ok)throw Error("City search failed");return r.json()});
+    const places=(geo.results||[]).filter(p=>p.country_code==="IN");
+    const place=places[0]||(geo.results||[])[0];
+    if(!place)throw Error("City not found. Try another spelling.");
+    const airUrl="https://air-quality-api.open-meteo.com/v1/air-quality?latitude="+place.latitude+"&longitude="+place.longitude+"&hourly=european_aqi,pm2_5,pm10,nitrogen_dioxide,sulphur_dioxide,ozone,carbon_monoxide&forecast_days=1&timezone=auto";
+    const data=await fetch(airUrl).then(r=>{if(!r.ok)throw Error("Air-quality service unavailable");return r.json()});
+    const times=data.hourly.time||[];
+    if(!times.length)throw Error("No hourly data returned for this location.");
+    const now=new Date();
+    let index=0,best=Infinity;
+    times.forEach((t,i)=>{const diff=Math.abs(new Date(t).getTime()-now.getTime());if(diff<best){best=diff;index=i}});
+    const h=data.hourly;
+    const val=key=>h[key]&&h[key][index]!=null?Math.round(h[key][index]*10)/10:null;
+    const aqi=val("european_aqi");
+    if(aqi===null)throw Error("AQI estimate is not available for this city right now.");
+    $("place").textContent=[place.name,place.admin1,"India"].filter(Boolean).join(", ");
+    $("aqi").textContent=Math.round(aqi);
+    const c=categoryFor(aqi);$("category").textContent=c[0];$("category").className="pill "+c[1];
+    $("advice").textContent=adviceFor(aqi);
+    $("pm25").textContent=val("pm2_5")??"N/A";$("pm10").textContent=val("pm10")??"N/A";
+    $("no2").textContent=val("nitrogen_dioxide")??"N/A";$("so2").textContent=val("sulphur_dioxide")??"N/A";
+    $("o3").textContent=val("ozone")??"N/A";$("co").textContent=val("carbon_monoxide")??"N/A";
+    $("updated").textContent="Nearest available hourly model time: "+times[index]+". Not a verified nearby CPCB station observation.";
+    setStatus("Data loaded. Remember: this is a European AQI model estimate, not official Indian CPCB AQI.");
+  }catch(err){setStatus(err.message||"Could not load data. Check your internet connection and try again.")}
+  finally{$("searchBtn").disabled=false}
+}
+function simulate(v){
+  $("simValue").textContent=v;
+  const c=categoryFor(Number(v));$("simLabel").textContent=c[0];$("simAction").textContent=c[2];
+}
+searchCity();
+</script>
+</body>
+  </html>
